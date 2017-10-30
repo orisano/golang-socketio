@@ -2,6 +2,7 @@ package transport
 
 import (
 	"errors"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -30,10 +31,21 @@ var (
 type WebsocketConnection struct {
 	socket    *websocket.Conn
 	transport *WebsocketTransport
+
+	TimeNow func() time.Time
+}
+
+func newWebSocketConnection(socket *websocket.Conn, transport *WebsocketTransport) Connection {
+	return &WebsocketConnection{
+		socket:    socket,
+		transport: transport,
+
+		TimeNow: time.Now,
+	}
 }
 
 func (wsc *WebsocketConnection) GetMessage() (message string, err error) {
-	wsc.socket.SetReadDeadline(time.Now().Add(wsc.transport.ReceiveTimeout))
+	wsc.socket.SetReadDeadline(wsc.TimeNow().Add(wsc.transport.ReceiveTimeout))
 	msgType, reader, err := wsc.socket.NextReader()
 	if err != nil {
 		return "", err
@@ -59,12 +71,13 @@ func (wsc *WebsocketConnection) GetMessage() (message string, err error) {
 }
 
 func (wsc *WebsocketConnection) WriteMessage(message string) error {
-	wsc.socket.SetWriteDeadline(time.Now().Add(wsc.transport.SendTimeout))
+	wsc.socket.SetWriteDeadline(wsc.TimeNow().Add(wsc.transport.SendTimeout))
 	writer, err := wsc.socket.NextWriter(websocket.TextMessage)
 	if err != nil {
 		return err
 	}
 
+	io.WriteString(writer, message)
 	if _, err := writer.Write([]byte(message)); err != nil {
 		return err
 	}
@@ -95,14 +108,15 @@ type WebsocketTransport struct {
 }
 
 func (wst *WebsocketTransport) Connect(url string) (conn Connection, err error) {
-	dialer := websocket.Dialer{}
-	dialer.Jar = wst.Jar
+	dialer := websocket.Dialer{
+		Jar: wst.Jar,
+	}
 	socket, _, err := dialer.Dial(url, wst.RequestHeader)
 	if err != nil {
 		return nil, err
 	}
 
-	return &WebsocketConnection{socket, wst}, nil
+	return newWebSocketConnection(socket, wst), nil
 }
 
 func (wst *WebsocketTransport) HandleConnection(
@@ -119,7 +133,7 @@ func (wst *WebsocketTransport) HandleConnection(
 		return nil, ErrorHttpUpgradeFailed
 	}
 
-	return &WebsocketConnection{socket, wst}, nil
+	return newWebSocketConnection(socket, wst), nil
 }
 
 /**

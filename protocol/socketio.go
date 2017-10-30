@@ -56,7 +56,7 @@ func Encode(msg *Message) (string, error) {
 	}
 
 	if msg.Type == MessageTypeAckRequest || msg.Type == MessageTypeAckResponse {
-		result += strconv.Itoa(msg.AckId)
+		result += strconv.Itoa(int(msg.AckId))
 	}
 
 	if msg.Type == MessageTypeOpen || msg.Type == MessageTypeClose {
@@ -67,7 +67,7 @@ func Encode(msg *Message) (string, error) {
 		return result + "[" + msg.Args + "]", nil
 	}
 
-	jsonMethod, err := json.Marshal(&msg.Method)
+	jsonMethod, err := json.Marshal(msg.Method)
 	if err != nil {
 		return "", err
 	}
@@ -191,7 +191,7 @@ func Decode(data string) (*Message, error) {
 	}
 
 	ack, rest, err := getAck(data)
-	msg.AckId = ack
+	msg.AckId = int64(ack)
 	if msg.Type == MessageTypeAckResponse {
 		if err != nil {
 			return nil, err

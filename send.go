@@ -3,7 +3,6 @@ package gosocketio
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/orisano/golang-socketio/protocol"
@@ -18,31 +17,21 @@ var (
 Send message packet to socket
 */
 func send(msg *protocol.Message, c *Channel, args interface{}) error {
-	//preventing json/encoding "index out of range" panic
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println("socket.io send panic: ", r)
-		}
-	}()
-
 	if args != nil {
-		json, err := json.Marshal(&args)
+		jargs, err := json.Marshal(args)
 		if err != nil {
 			return err
 		}
-
-		msg.Args = string(json)
+		msg.Args = string(jargs)
 	}
 
 	command, err := protocol.Encode(msg)
 	if err != nil {
 		return err
 	}
-
 	if len(c.out) == queueBufferSize {
 		return ErrorSocketOverflood
 	}
-
 	c.out <- command
 
 	return nil
@@ -66,7 +55,7 @@ Create ack packet based on given data and send it and receive response
 func (c *Channel) Ack(method string, args interface{}, timeout time.Duration) (string, error) {
 	msg := &protocol.Message{
 		Type:   protocol.MessageTypeAckRequest,
-		AckId:  c.ack.getNextId(),
+		AckId:  c.ack.getNextID(),
 		Method: method,
 	}
 

@@ -3,7 +3,6 @@ package gosocketio
 import (
 	"encoding/json"
 	"errors"
-	"net/http"
 	"sync"
 	"time"
 
@@ -12,7 +11,7 @@ import (
 )
 
 const (
-	queueBufferSize = 500
+	queueBufferSize = 3000
 )
 
 var (
@@ -47,21 +46,19 @@ type Channel struct {
 	alive     bool
 	aliveLock sync.Mutex
 
-	ack ackProcessor
-
-	server        *Server
-	ip            string
-	requestHeader http.Header
+	ack *ackProcessor
 }
 
 /**
 create channel, map, and set active
 */
-func (c *Channel) initChannel() {
-	//TODO: queueBufferSize from constant to server or client variable
-	c.out = make(chan string, queueBufferSize)
-	c.ack.resultWaiters = make(map[int](chan string))
-	c.alive = true
+func NewChannel(conn transport.Connection) *Channel {
+	return &Channel{
+		conn:  conn,
+		out:   make(chan string, queueBufferSize),
+		ack:   newAckProcessor(),
+		alive: true,
+	}
 }
 
 /**
@@ -77,26 +74,20 @@ Checks that Channel is still alive
 func (c *Channel) IsAlive() bool {
 	c.aliveLock.Lock()
 	defer c.aliveLock.Unlock()
-
 	return c.alive
 }
 
 /**
 Close channel
 */
-func closeChannel(c *Channel, m *methods, args ...interface{}) error {
+func closeChannel(c *Channel, m *methods) error {
 	c.aliveLock.Lock()
 	defer c.aliveLock.Unlock()
-
 	if !c.alive {
-		//already closed
 		return nil
 	}
-
 	c.conn.Close()
 	c.alive = false
-
-	//clean outloop
 	for len(c.out) > 0 {
 		<-c.out
 	}
@@ -116,18 +107,19 @@ func inLoop(c *Channel, m *methods) error {
 	for {
 		pkg, err := c.conn.GetMessage()
 		if err != nil {
-			return closeChannel(c, m, err)
+			return closeChannel(c, m)
 		}
 		msg, err := protocol.Decode(pkg)
 		if err != nil {
-			closeChannel(c, m, protocol.ErrorWrongPacket)
+			closeChannel(c, m)
 			return err
 		}
 
 		switch msg.Type {
 		case protocol.MessageTypeOpen:
 			if err := json.Unmarshal([]byte(msg.Source[1:]), &c.header); err != nil {
-				closeChannel(c, m, ErrorWrongHeader)
+				closeChannel(c, m)
+				return err
 			}
 			m.callLoopEvent(c, OnConnection)
 		case protocol.MessageTypePing:
@@ -157,7 +149,7 @@ func outLoop(c *Channel, m *methods) error {
 	for {
 		outBufferLen := len(c.out)
 		if outBufferLen >= queueBufferSize-1 {
-			return closeChannel(c, m, ErrorSocketOverflood)
+			return closeChannel(c, m)
 		} else if outBufferLen > int(queueBufferSize/2) {
 			overfloodedLock.Lock()
 			overflooded[c] = struct{}{}
@@ -175,7 +167,8 @@ func outLoop(c *Channel, m *methods) error {
 
 		err := c.conn.WriteMessage(msg)
 		if err != nil {
-			return closeChannel(c, m, err)
+			closeChannel(c, m)
+			return err
 		}
 	}
 	return nil
@@ -191,7 +184,6 @@ func pinger(c *Channel) {
 		if !c.IsAlive() {
 			return
 		}
-
 		c.out <- protocol.PingMessage
 	}
 }
