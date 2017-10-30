@@ -20,11 +20,11 @@ const (
 )
 
 var (
-	ErrorBinaryMessage     = errors.New("Binary messages are not supported")
-	ErrorBadBuffer         = errors.New("Buffer error")
-	ErrorPacketWrong       = errors.New("Wrong packet type error")
-	ErrorMethodNotAllowed  = errors.New("Method not allowed")
-	ErrorHttpUpgradeFailed = errors.New("Http upgrade failed")
+	ErrorBinaryMessage     = errors.New("binary messages are not supported")
+	ErrorBadBuffer         = errors.New("buffer error")
+	ErrorPacketWrong       = errors.New("wrong packet type error")
+	ErrorMethodNotAllowed  = errors.New("method not allowed")
+	ErrorHttpUpgradeFailed = errors.New("http upgrade failed")
 )
 
 type WebsocketConnection struct {

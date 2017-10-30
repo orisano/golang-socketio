@@ -21,8 +21,8 @@ const (
 )
 
 var (
-	ErrorServerNotSet       = errors.New("Server not set")
-	ErrorConnectionNotFound = errors.New("Connection not found")
+	ErrorServerNotSet       = errors.New("server not set")
+	ErrorConnectionNotFound = errors.New("connection not found")
 )
 
 /**

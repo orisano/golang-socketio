@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	ErrorWaiterNotFound = errors.New("Waiter not found")
+	ErrorWaiterNotFound = errors.New("waiter not found")
 )
 
 /**

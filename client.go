@@ -9,7 +9,6 @@ import (
 const (
 	webSocketProtocol       = "ws://"
 	webSocketSecureProtocol = "wss://"
-	//socketioProto           = "?EIO=3&transport=websocket"
 )
 
 /**

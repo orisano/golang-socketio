@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	ErrorSendTimeout     = errors.New("Timeout")
-	ErrorSocketOverflood = errors.New("Socket overflood")
+	ErrorSendTimeout     = errors.New("timeout")
+	ErrorSocketOverflood = errors.New("socket overflood")
 )
 
 /**

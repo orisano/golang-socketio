@@ -15,13 +15,13 @@ const (
 	ackMessage    = "43"
 
 	CloseMessage = "1"
-	PingMessage = "2"
-	PongMessage = "3"
+	PingMessage  = "2"
+	PongMessage  = "3"
 )
 
 var (
-	ErrorWrongMessageType = errors.New("Wrong message type")
-	ErrorWrongPacket      = errors.New("Wrong packet")
+	ErrorWrongMessageType = errors.New("wrong message type")
+	ErrorWrongPacket      = errors.New("wrong packet")
 )
 
 func typeToText(msgType int) (string, error) {

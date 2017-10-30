@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	ErrorWrongHeader = errors.New("Wrong header")
+	ErrorWrongHeader = errors.New("wrong header")
 )
 
 /**
