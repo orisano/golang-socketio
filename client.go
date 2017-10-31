@@ -17,15 +17,20 @@ type Client struct {
 /**
 Get ws/wss url by host and port
 */
-func GetURL(host string, secure bool) string {
+func GetURL(host string, secure bool, spath ...string) string {
 	u := new(url.URL)
 	if secure {
 		u.Scheme = "wss"
 	} else {
 		u.Scheme = "ws"
 	}
+	p := "/socket.io/"
+	if len(spath) == 1 {
+		p = spath[0]
+	}
+
 	u.Host = host
-	u.Path = "/socket.io/"
+	u.Path = p
 	q := u.Query()
 	q.Set("EIO", "3")
 	q.Set("transport", "websocket")
